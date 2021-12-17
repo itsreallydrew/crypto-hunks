@@ -32,10 +32,15 @@ import "../OZ_Imports/ERC721Enumberable.sol";
 contract CryptoArnies is ERC721Enumerable {
     using Counters for Counters.Counter;
     Counters.Counter private _tokenIDs;
-    uint256 totalMinted = 0;
-    uint256 TOTAL_SUPPLY = 5000;
+    uint256 public totalMinted = 0;
+    uint256 public TOTAL_SUPPLY = 5000;
 
     // need opensea address
+
+    // modifier arnieOwner(uint256 arnieId) {
+    //     require(ownerOf(arnieId) == msg.sender, "Cannot interact with a Arnies you do not own");
+    //     _;
+    // }
 
     constructor() ERC721("CRYPTOARNIES", "ARNIES") {
         console.log("Initial contract test");
