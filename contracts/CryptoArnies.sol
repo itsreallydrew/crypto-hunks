@@ -2,33 +2,52 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol";
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
+/********************************************* */
+// Imports from Open Zeppelin
+/********************************************* */
+
+// import "@openzeppelin/contracts/access/Ownable.sol";
+// import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+// import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
+// import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol";
+// import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+// import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+// import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
+// import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
 // import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Holder.sol";
 // import "@openzeppelin/contracts/introspection/IERC165.sol";
 // import "@openzeppelin/contracts/introspection/ERC165.sol";
 // import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/utils/Address.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
+// import "@openzeppelin/contracts/utils/Address.sol";
 // import "@openzeppelin/contracts/utils/EnumerableSet.sol";
-import "@openzeppelin/contracts/utils/Strings.sol";
+// import "@openzeppelin/contracts/utils/Strings.sol";
+// import "@openzeppelin/contracts/security/Pausable.sol";
+
+import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
 import "hardhat/console.sol";
 
-contract CryptoArnies is ERC721, Ownable {
+import "../OZ_Imports/ERC721Enumberable.sol";
+
+contract CryptoArnies is ERC721Enumerable {
     using Counters for Counters.Counter;
     Counters.Counter private _tokenIDs;
     uint256 totalMinted = 0;
     uint256 TOTAL_SUPPLY = 5000;
 
-    constructor() ERC721("CRYPTOARNIES", "PAMP") {
+    // need opensea address
+
+    constructor() ERC721("CRYPTOARNIES", "ARNIES") {
         console.log("Initial contract test");
     }
+
+    // will need a function to generate an NFT -- mint will be called from inside
+
+    // function for burning token
+
+    // function for transferring
+
+    // safetransfer
+
+    //
 }
