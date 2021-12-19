@@ -52,8 +52,15 @@ contract CryptoArnies is ERC721Enumerable {
     }
 
     // will need a function to generate an NFT -- mint will be called from inside
+    function mintPresale(address to, uint256 numOfMints) public payable {
+        _safeMint(to, _tokenIDs.current());
+        _tokenIDs.increment();
+    }
+
+
     function mint(string memory tokenURI){
-        _safeMint();
+        _safeMint(to, _tokenIDs.current());
+        _tokenIDs.increment();
     }
 
 
