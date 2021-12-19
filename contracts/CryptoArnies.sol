@@ -42,11 +42,15 @@ contract CryptoArnies is ERC721Enumerable {
     //     _;
     // }
 
-    constructor() ERC721("CRYPTOARNIES", "ARNIES") {
+    constructor() public ERC721("CRYPTOARNIES", "ARNIES") {
         console.log("Initial contract test");
     }
 
     // will need a function to generate an NFT -- mint will be called from inside
+    function mint(string memory tokenURI){
+        _safeMint();
+    }
+
 
     // function for burning token
 
