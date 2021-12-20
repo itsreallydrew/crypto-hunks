@@ -34,6 +34,7 @@ contract CryptoArnies is ERC721Enumerable {
     Counters.Counter private _tokenIDs;
     uint256 public totalMinted = 0;
     uint256 public TOTAL_SUPPLY = 5000;
+    uint256 public price = 0.08 ether;
 
     // need opensea address
 
@@ -53,14 +54,16 @@ contract CryptoArnies is ERC721Enumerable {
 
     // will need a function to generate an NFT -- mint will be called from inside
     function mintPresale(address to, uint256 numOfMints) public payable {
-        _safeMint(to, _tokenIDs.current());
+        require(price == msg.value);
         _tokenIDs.increment();
+        _safeMint(to, _tokenIDs.current());
     }
 
 
-    function mint(string memory tokenURI){
-        _safeMint(to, _tokenIDs.current());
+    function mint(address to, uint numOfMints) public payable {
+        require(price == msg.value);
         _tokenIDs.increment();
+        _safeMint(to, _tokenIDs.current());
     }
 
 
