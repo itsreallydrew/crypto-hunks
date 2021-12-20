@@ -37,10 +37,15 @@ contract CryptoArnies is ERC721Enumerable {
 
     // need opensea address
 
-    // modifier arnieOwner(uint256 arnieId) {
-    //     require(ownerOf(arnieId) == msg.sender, "Cannot interact with a Arnies you do not own");
-    //     _;
-    // }
+    // mapping for token owners
+
+    modifier arnieOwner(uint256 arnieId) {
+        require(
+            ownerOf(arnieId) == msg.sender,
+            "Cannot interact with a Arnies you do not own"
+        );
+        _;
+    }
 
     constructor() ERC721("CRYPTOARNIES", "ARNIES") {
         console.log("Initial contract test");
