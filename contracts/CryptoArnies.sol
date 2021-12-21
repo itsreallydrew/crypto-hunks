@@ -11,7 +11,6 @@ pragma solidity ^0.8.0;
 // import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
 // import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol";
 // import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-// import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 // import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 // import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
 // import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Holder.sol";
@@ -29,49 +28,67 @@ import "hardhat/console.sol";
 
 import "../OZ_Imports/ERC721Enumberable.sol";
 
-contract CryptoArnies is ERC721Enumerable {
+contract CryptoArniez is ERC721Enumerable {
     using Counters for Counters.Counter;
-    Counters.Counter private _tokenIDs;
+
+    Counters.Counter private _tokenIdCounter;
     uint256 public totalMinted = 0;
     uint256 public TOTAL_SUPPLY = 5000;
     uint256 public price = 0.08 ether;
+    mapping(address => uint256) public whitelistAmount;
+    mapping(address => mapping(uint256 => uint256)) public nftHolders;
 
-    // need opensea address
+    bool presaleLive;
+    bool publicSaleLive;
 
-    // mapping for token owners
+    constructor() ERC721("CryptoArniez", "ARNIEZ") {}
 
-    modifier arnieOwner(uint256 arnieId) {
+    function _baseURI() internal pure override returns (string memory) {
+        return "https://cryptoarnies.io/tokens/";
+    }
+
+    function mintPresale(address to, uint256 amount) public payable {
+        require(amount < 3 && amount > 0, "Please choose a valid amount");
+        whitelistAmount[msg.sender] = amount;
         require(
-            ownerOf(arnieId) == msg.sender,
-            "Cannot interact with a Arnies you do not own"
+            whitelistAmount[msg.sender] > 0,
+            "You do not have any reserved mints"
         );
-        _;
+        // require(
+        //     amount <= whitelistAmount[msg.sender],
+        //     "You have a max of 2 mints"
+        // );
+        require(
+            totalMinted + amount < TOTAL_SUPPLY,
+            "Sale has ended. Please visit us on OpenSea"
+        );
+        require(msg.value == (price * amount), "Incorrect amount of ether");
+        for (uint256 i = 1; i <= amount; i++) {
+            _tokenIdCounter.increment();
+            uint256 tokenId = _tokenIdCounter.current();
+            _safeMint(to, tokenId);
+            tokenURI(tokenId);
+            totalMinted = totalMinted + 1;
+        }
     }
 
-    constructor() public ERC721("CRYPTOARNIES", "ARNIES") {
-        console.log("Initial contract test");
+    function mintPublic(address to, uint256 amount) public payable {
+        require(amount < 3, "Limit is 2 per wallet");
+        require(
+            totalMinted < TOTAL_SUPPLY,
+            "Sale has ended. Please visit us on OpenSea"
+        );
+        require(msg.value == (price * amount), "Incorrect amount of ether");
+        for (uint256 i = 1; i <= amount; i++) {
+            _tokenIdCounter.increment();
+            uint256 tokenId = _tokenIdCounter.current();
+            _safeMint(to, tokenId);
+            tokenURI(tokenId);
+            totalMinted = totalMinted + 1;
+        }
     }
 
-    // will need a function to generate an NFT -- mint will be called from inside
-    function mintPresale(address to, uint256 numOfMints) public payable {
-        require(price == msg.value);
-        _tokenIDs.increment();
-        _safeMint(to, _tokenIDs.current());
+    function getTotalMinted() public view returns (uint256) {
+        return totalMinted;
     }
-
-
-    function mint(address to, uint numOfMints) public payable {
-        require(price == msg.value);
-        _tokenIDs.increment();
-        _safeMint(to, _tokenIDs.current());
-    }
-
-
-    // function for burning token
-
-    // function for transferring
-
-    // safetransfer
-
-    //
 }
