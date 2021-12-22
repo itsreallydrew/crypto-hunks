@@ -35,6 +35,7 @@ contract CryptoArniez is ERC721Enumerable {
     uint256 public totalMinted = 0;
     uint256 public TOTAL_SUPPLY = 5000;
     uint256 public price = 0.08 ether;
+
     mapping(address => uint256) public whitelistAmount;
     mapping(address => mapping(uint256 => uint256)) public nftHolders;
 
