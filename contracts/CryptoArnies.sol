@@ -53,7 +53,7 @@ contract CryptoArniez is ERC721Enumerable, ReentrancyGuard {
     constructor() ERC721("CryptoArniez", "ARNIEZ") {}
 
     function _baseURI() internal pure override returns (string memory) {
-        return "ipfs://";
+        return baseURI;
     }
 
     function mintPresale(uint256 amount) public payable {
