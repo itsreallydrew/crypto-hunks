@@ -105,6 +105,8 @@ so we have a 24x24 and a 12x12 rightr
 myoo | CyberKongz — Today at 9:10 AM
 the max you can build on is a 4x4
 
+
+
 myoo | CyberKongz — Today at 9:10 AM
 so we have multiple 4x4s inside of our bigger plots
 and we plan and build according to that
