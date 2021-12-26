@@ -6,7 +6,7 @@ pragma solidity ^0.8.0;
 // Imports from Open Zeppelin
 /********************************************* */
 
-// import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 // import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 // import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
 // import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol";
@@ -30,11 +30,17 @@ import "../OZ_Imports/ERC721Enumberable.sol";
 
 contract CryptoArniez is ERC721Enumerable, ReentrancyGuard {
     using Counters for Counters.Counter;
+    using SafeMath for uint256;
+    using Address for address;
+
+    string private baseURI;
+    string private unrevealedURI;
 
     Counters.Counter private _tokenIdCounter;
     uint256 public totalMinted = 0;
     uint256 public TOTAL_SUPPLY = 5000;
     uint256 public price = 0.08 ether;
+    uint256 public maxMintAmount = 3;
 
     mapping(address => uint256) public whitelistAmount;
     mapping(address => mapping(uint256 => uint256)) public nftHolders;
@@ -51,7 +57,8 @@ contract CryptoArniez is ERC721Enumerable, ReentrancyGuard {
     }
 
     function mintPresale(uint256 amount) public payable {
-        require(amount < 3 && amount > 0, "Please choose a valid amount");
+        require(mintPaused == false);
+        require(amount <= 3 && amount > 0, "Please choose a valid amount");
         whitelistAmount[msg.sender] = amount;
         require(
             whitelistAmount[msg.sender] > 0,
@@ -76,7 +83,8 @@ contract CryptoArniez is ERC721Enumerable, ReentrancyGuard {
     }
 
     function mintPublic(uint256 amount) public payable {
-        require(amount < 3, "Limit is 2 per wallet");
+        require(mintPaused == false);
+        require(amount <= 3, "Limit is 3 per wallet");
         require(
             totalMinted < TOTAL_SUPPLY,
             "Sale has ended. Please visit us on OpenSea"
@@ -102,20 +110,20 @@ contract CryptoArniez is ERC721Enumerable, ReentrancyGuard {
         revealed = true;
     }
     
-    function setCost(uint256 _newCost) public onlyOwner {
-        cost = _newCost;
+    function setPrice(uint256 _newPrice) public onlyOwner {
+        price = _newPrice;
     }
 
     function setmaxMintAmount(uint256 _newmaxMintAmount) public onlyOwner {
         maxMintAmount = _newmaxMintAmount;
     }
     
-    function setNotRevealedURI(string memory _notRevealedURI) public onlyOwner {
-        notRevealedUri = _notRevealedURI;
+    function setUnrevealedURI(string memory _unrevealedURI) public onlyOwner {
+        unrevealedURI = _unrevealedURI;
     }
 
-    function setBaseURI(string memory _newBaseURI) public onlyOwner {
-        baseURI = _newBaseURI;
+    function setBaseURI(string memory _newURI) public onlyOwner {
+        baseURI = _newURI;
     }
 
     function setBaseExtension(string memory _newBaseExtension) public onlyOwner {
