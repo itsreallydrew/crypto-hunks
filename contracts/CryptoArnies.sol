@@ -28,7 +28,7 @@ import "hardhat/console.sol";
 
 import "../OZ_Imports/ERC721Enumberable.sol";
 
-contract CryptoArniez is ERC721Enumerable {
+contract CryptoArniez is ERC721Enumerable, ReentrancyGuard {
     using Counters for Counters.Counter;
 
     Counters.Counter private _tokenIdCounter;
