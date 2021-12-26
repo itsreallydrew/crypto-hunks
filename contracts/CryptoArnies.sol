@@ -41,14 +41,16 @@ contract CryptoArniez is ERC721Enumerable, ReentrancyGuard {
 
     bool presaleLive;
     bool publicSaleLive;
+    bool revealed = false;
+    bool mintPaused = true;
 
     constructor() ERC721("CryptoArniez", "ARNIEZ") {}
 
     function _baseURI() internal pure override returns (string memory) {
-        return "https://cryptoarnies.io/tokens/";
+        return "ipfs://";
     }
 
-    function mintPresale(address to, uint256 amount) public payable {
+    function mintPresale(uint256 amount) public payable {
         require(amount < 3 && amount > 0, "Please choose a valid amount");
         whitelistAmount[msg.sender] = amount;
         require(
@@ -67,13 +69,13 @@ contract CryptoArniez is ERC721Enumerable, ReentrancyGuard {
         for (uint256 i = 1; i <= amount; i++) {
             _tokenIdCounter.increment();
             uint256 tokenId = _tokenIdCounter.current();
-            _safeMint(to, tokenId);
+            _safeMint(msg.sender, tokenId);
             tokenURI(tokenId);
             totalMinted = totalMinted + 1;
         }
     }
 
-    function mintPublic(address to, uint256 amount) public payable {
+    function mintPublic(uint256 amount) public payable {
         require(amount < 3, "Limit is 2 per wallet");
         require(
             totalMinted < TOTAL_SUPPLY,
@@ -83,7 +85,7 @@ contract CryptoArniez is ERC721Enumerable, ReentrancyGuard {
         for (uint256 i = 1; i <= amount; i++) {
             _tokenIdCounter.increment();
             uint256 tokenId = _tokenIdCounter.current();
-            _safeMint(to, tokenId);
+            _safeMint(msg.sender, tokenId);
             tokenURI(tokenId);
             totalMinted = totalMinted + 1;
         }
@@ -93,20 +95,41 @@ contract CryptoArniez is ERC721Enumerable, ReentrancyGuard {
         return totalMinted;
     }
 
-    function withdraw() public payable onlyOwner {
 
+
+    // Only Owner Functions
+    function reveal() public onlyOwner {
+        revealed = true;
     }
+    
+    function setCost(uint256 _newCost) public onlyOwner {
+        cost = _newCost;
+    }
+
+    function setmaxMintAmount(uint256 _newmaxMintAmount) public onlyOwner {
+        maxMintAmount = _newmaxMintAmount;
+    }
+    
+    function setNotRevealedURI(string memory _notRevealedURI) public onlyOwner {
+        notRevealedUri = _notRevealedURI;
+    }
+
+    function setBaseURI(string memory _newBaseURI) public onlyOwner {
+        baseURI = _newBaseURI;
+    }
+
+    function setBaseExtension(string memory _newBaseExtension) public onlyOwner {
+        baseExtension = _newBaseExtension;
+    }
+
+    function pause(bool _state) public onlyOwner {
+        mintPaused = _state;
+    }
+
+    function withdraw() public onlyOwner {
+        uint256 bal = address(this).bal;
+        payable(msg.sender).transfer(bal);
+    }
+
 }
 
-
-myoo | CyberKongz — Today at 9:10 AM
-so we have a 24x24 and a 12x12 rightr
-
-myoo | CyberKongz — Today at 9:10 AM
-the max you can build on is a 4x4
-
-
-
-myoo | CyberKongz — Today at 9:10 AM
-so we have multiple 4x4s inside of our bigger plots
-and we plan and build according to that
