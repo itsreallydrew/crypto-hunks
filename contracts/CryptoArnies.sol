@@ -136,4 +136,12 @@ contract CryptoArniez is
     function withdraw() external onlyOwner {
         payable(msg.sender).transfer(address(this).balance);
     }
+
+    function togglePresaleLive() external onlyOwner {
+        presaleLive = !presaleLive;
+    }
+
+    function togglePublicSaleLive() external onlyOwner {
+        publicSaleLive = !publicSaleLive;
+    }
 }
