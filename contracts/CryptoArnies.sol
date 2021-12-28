@@ -9,7 +9,7 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "@openzeppelin/contracts/access/IAccessControl.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
 
 // import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 // import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
@@ -34,7 +34,7 @@ import "hardhat/console.sol";
 contract CryptoArniez is
     ERC721Enumerable,
     ReentrancyGuard,
-    IAccessControl,
+    AccessControl,
     Ownable
 {
     using Counters for Counters.Counter;
@@ -54,15 +54,27 @@ contract CryptoArniez is
 
     mapping(address => uint256) public whitelistAmount;
     mapping(address => mapping(uint256 => uint256)) public nftHolders;
+    mapping(address => bool) public admins;
 
     bool presaleLive;
     bool publicSaleLive;
     bool revealed;
-    bool mintPaused = true;
+    bool mintPaused;
 
-    constructor() ERC721("CryptoArniez", "ARNIEZ") {}
+    modifier onlyAdmin() {
+        require(admins[msg.sender], "Only admins can call this function");
+        _;
+    }
 
-    function _baseURI() internal pure override returns (string memory) {
+    constructor(address _owner) ERC721("CryptoArniez", "ARNIEZ") {
+        admins[_owner] = true;
+    }
+
+    function setAdmin(address _newAdmin) external onlyOwner {
+        admins[_newAdmin] = true;
+    }
+
+    function _baseURI() internal view override returns (string memory) {
         return baseURI;
     }
 
@@ -101,47 +113,62 @@ contract CryptoArniez is
         return totalMinted;
     }
 
+    /********************************************* */
     // Only Owner Functions
-    function reveal() external onlyOwner {
+    /********************************************* */
+
+    function reveal() external onlyAdmin {
         revealed = true;
     }
 
-    function setPrice(uint256 _newPrice) external onlyOwner {
+    function setPrice(uint256 _newPrice) external onlyAdmin {
         price = _newPrice;
     }
 
-    function setmaxMintAmount(uint256 _newmaxMintAmount) external onlyOwner {
+    function setmaxMintAmount(uint256 _newmaxMintAmount) external onlyAdmin {
         maxMintAmount = _newmaxMintAmount;
     }
 
-    function setUnrevealedURI(string memory _unrevealedURI) external onlyOwner {
+    function setUnrevealedURI(string memory _unrevealedURI) external onlyAdmin {
         unrevealedURI = _unrevealedURI;
     }
 
-    function setBaseURI(string memory _newURI) external onlyOwner {
+    function setBaseURI(string memory _newURI) external onlyAdmin {
         baseURI = _newURI;
     }
 
     function setBaseExtension(string memory _newBaseExtension)
         public
-        onlyOwner
+        onlyAdmin
     {
         baseExtension = _newBaseExtension;
     }
 
-    function pause(bool _state) external onlyOwner {
+    function pause(bool _state) external onlyAdmin {
         mintPaused = _state;
     }
 
-    function withdraw() external onlyOwner {
+    function withdraw() external onlyAdmin {
         payable(msg.sender).transfer(address(this).balance);
     }
 
-    function togglePresaleLive() external onlyOwner {
+    function togglePresaleLive() external onlyAdmin {
         presaleLive = !presaleLive;
     }
 
-    function togglePublicSaleLive() external onlyOwner {
+    function togglePublicSaleLive() external onlyAdmin {
         publicSaleLive = !publicSaleLive;
+    }
+
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        virtual
+        override(AccessControl, ERC721Enumerable)
+        returns (bool)
+    {
+        return
+            interfaceId == type(IAccessControl).interfaceId ||
+            super.supportsInterface(interfaceId);
     }
 }
