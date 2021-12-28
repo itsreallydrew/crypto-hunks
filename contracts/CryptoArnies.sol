@@ -117,6 +117,18 @@ contract CryptoArniez is
     // Only Owner Functions
     /********************************************* */
 
+    function mintReserve(address _to, uint256 _amount) public onlyAdmin {
+        require(_amount > 0 && _amount <= RESERVED_ARNIES, "Amount is invalid");
+        for (uint256 i = 0; i < _amount; i++) {
+            _tokenIdCounter.increment();
+            uint256 tokenId = _tokenIdCounter.current();
+            _safeMint(_to, tokenId);
+            tokenURI(tokenId);
+            totalMinted = totalMinted.add(1);
+        }
+        RESERVED_ARNIES = RESERVED_ARNIES.sub(_amount);
+    }
+
     function reveal() external onlyAdmin {
         revealed = true;
     }

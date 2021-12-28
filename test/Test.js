@@ -65,6 +65,17 @@ describe('Arnies', () => {
 			let result = await contract.publicSaleLive();
 			expect(result).to.equal(true);
 		});
+
+		it('Should increment the total supply', async function () {
+			await contract.connect(owner).mintReserve(user.address, 2);
+			let result = await contract.totalMinted();
+			expect(result).to.equal(2);
+		});
+		it('Should decrement from the reserve amount', async function () {
+			await contract.connect(owner).mintReserve(user.address, 2);
+			let result = await contract.RESERVED_ARNIES();
+			expect(result).to.equal(18);
+		});
 	});
 
 	describe('User actions', () => {
