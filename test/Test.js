@@ -30,6 +30,12 @@ describe('Arnies', () => {
 			expect(result).to.equal(true);
 		});
 
+		it('Should set revealed to true', async function () {
+			await contract.connect(owner).reveal();
+			const result = await contract.revealed();
+			expect(result).to.equal(true);
+		});
+
 		it('Should allow admin to change the price', async function () {
 			await contract.connect(owner).setPrice(100000000);
 			let newPrice = await contract.price();

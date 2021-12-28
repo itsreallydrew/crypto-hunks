@@ -56,10 +56,10 @@ contract CryptoArniez is
     mapping(address => mapping(uint256 => uint256)) public nftHolders;
     mapping(address => bool) public admins;
 
-    bool presaleLive;
-    bool publicSaleLive;
-    bool revealed;
-    bool mintPaused;
+    bool public presaleLive;
+    bool public publicSaleLive;
+    bool public revealed;
+    bool public mintPaused;
 
     modifier onlyAdmin() {
         require(admins[msg.sender], "Only admins can call this function");
