@@ -29,6 +29,12 @@ describe('Arnies', () => {
 			const result = await contract.admins(dev.address);
 			expect(result).to.equal(true);
 		});
+
+		it('Should allow admin to change the price', async function () {
+			await contract.connect(owner).setPrice(100000000);
+			let newPrice = await contract.price();
+			expect(newPrice).to.equal(Number(100000000));
+		});
 	});
 
 	describe('User actions', () => {
