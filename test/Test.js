@@ -41,6 +41,30 @@ describe('Arnies', () => {
 			let newPrice = await contract.price();
 			expect(newPrice).to.equal(Number(100000000));
 		});
+
+		it('Should allow admin to change max mint', async function () {
+			await contract.connect(owner).setMaxMintAmount(7);
+			let result = await contract.maxMintAmount();
+			expect(result).to.equal(7);
+		});
+
+		it('Should toggle the pause state', async function () {
+			await contract.connect(owner).togglePause();
+			let result = await contract.mintPaused();
+			expect(result).to.equal(true);
+		});
+
+		it('Should toggle the pre-sale state', async function () {
+			await contract.connect(owner).togglePresaleLive();
+			let result = await contract.presaleLive();
+			expect(result).to.equal(true);
+		});
+
+		it('Should toggle the public sale state', async function () {
+			await contract.connect(owner).togglePublicSaleLive();
+			let result = await contract.publicSaleLive();
+			expect(result).to.equal(true);
+		});
 	});
 
 	describe('User actions', () => {

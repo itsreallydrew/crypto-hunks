@@ -125,7 +125,7 @@ contract CryptoArniez is
         price = _newPrice;
     }
 
-    function setmaxMintAmount(uint256 _newmaxMintAmount) external onlyAdmin {
+    function setMaxMintAmount(uint256 _newmaxMintAmount) external onlyAdmin {
         maxMintAmount = _newmaxMintAmount;
     }
 
@@ -144,8 +144,8 @@ contract CryptoArniez is
         baseExtension = _newBaseExtension;
     }
 
-    function pause(bool _state) external onlyAdmin {
-        mintPaused = _state;
+    function togglePause() external onlyAdmin {
+        mintPaused = !mintPaused;
     }
 
     function withdraw() external onlyAdmin {
