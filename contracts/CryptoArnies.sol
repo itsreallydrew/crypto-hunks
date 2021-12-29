@@ -48,7 +48,7 @@ contract CryptoArniez is
     Counters.Counter private _tokenIdCounter;
     uint256 public totalMinted;
     uint256 public TOTAL_SUPPLY = 5000;
-    uint256 public price = 0.08 ether;
+    uint256 public price = 80000000000000000; //price in wei -- 0.08 ether
     uint256 public maxMintAmount = 5;
     uint256 public RESERVED_ARNIES = 20;
 
@@ -68,10 +68,6 @@ contract CryptoArniez is
 
     constructor(address _owner) ERC721("CryptoArniez", "ARNIEZ") {
         admins[_owner] = true;
-    }
-
-    function setAdmin(address _newAdmin) external onlyOwner {
-        admins[_newAdmin] = true;
     }
 
     function _baseURI() internal view override returns (string memory) {
@@ -109,13 +105,12 @@ contract CryptoArniez is
         }
     }
 
-    function getTotalMinted() public view returns (uint256) {
-        return totalMinted;
+    /********************************************* */
+    // Only Owner/Admin Functions
+    /********************************************* */
+    function setAdmin(address _newAdmin) external onlyOwner {
+        admins[_newAdmin] = true;
     }
-
-    /********************************************* */
-    // Only Owner Functions
-    /********************************************* */
 
     function mintReserve(address _to, uint256 _amount) public onlyAdmin {
         require(_amount > 0 && _amount <= RESERVED_ARNIES, "Amount is invalid");
