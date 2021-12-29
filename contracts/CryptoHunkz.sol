@@ -31,7 +31,7 @@ import "hardhat/console.sol";
 
 // import "../OZ_Imports/ERC721Enumberable.sol";
 
-contract CryptoArniez is
+contract CryptoHunkz is
     ERC721Enumerable,
     ReentrancyGuard,
     AccessControl,
@@ -42,22 +42,20 @@ contract CryptoArniez is
     using Address for address;
 
     string private baseURI;
-    string private unrevealedURI;
-    string private baseExtension;
+    // string private unrevealedURI;
+    // string private baseExtension;
 
     Counters.Counter private _tokenIdCounter;
     uint256 public totalMinted;
     uint256 public TOTAL_SUPPLY = 5000;
     uint256 public price = 80000000000000000; //price in wei -- 0.08 ether
     uint256 public maxMintAmount = 5;
-    uint256 public RESERVED_ARNIES = 20;
+    uint256 public RESERVED = 20;
 
-    mapping(address => uint256) public whitelistAmount;
-    mapping(address => mapping(uint256 => uint256)) public nftHolders;
+    // mapping(address => uint256) public whitelistAmount;
     mapping(address => bool) public admins;
 
-    bool public presaleLive;
-    bool public publicSaleLive;
+    bool public saleLive;
     bool public revealed;
     bool public mintPaused;
 
@@ -66,20 +64,16 @@ contract CryptoArniez is
         _;
     }
 
-    constructor(address _owner) ERC721("CryptoArniez", "ARNIEZ") {
+    constructor(address _owner) ERC721("CryptoHunkz", "HUNKZ") {
         admins[_owner] = true;
     }
 
-    function _baseURI() internal view override returns (string memory) {
-        return baseURI;
-    }
-
-    function mintPresale(uint256 amount) public payable nonReentrant {
+    function mintHunk(uint256 _amount) public payable nonReentrant {
         require(mintPaused == false);
-        require(amount <= 3 && amount > 0, "Invalid amount");
-        require(totalMinted + amount <= TOTAL_SUPPLY, "Sold out");
-        require(msg.value == price.mul(amount), "Incorrect amount of ether");
-        for (uint256 i = 1; i <= amount; i++) {
+        require(_amount <= 3 && _amount > 0, "Invalid amount");
+        require(totalMinted + _amount <= TOTAL_SUPPLY, "Sold out");
+        require(msg.value == price.mul(_amount), "Incorrect amount of ether");
+        for (uint256 i = 1; i <= _amount; i++) {
             _tokenIdCounter.increment();
             uint256 tokenId = _tokenIdCounter.current();
             _safeMint(msg.sender, tokenId);
@@ -88,22 +82,42 @@ contract CryptoArniez is
         }
     }
 
-    function mintPublic(uint256 amount) public payable nonReentrant {
-        require(mintPaused == false);
-        require(amount <= 3, "Limit is 3 per wallet");
-        require(
-            totalMinted < TOTAL_SUPPLY,
-            "Sale has ended. Please visit us on OpenSea"
-        );
-        require(msg.value == (price * amount), "Incorrect amount of ether");
-        for (uint256 i = 1; i <= amount; i++) {
-            _tokenIdCounter.increment();
-            uint256 tokenId = _tokenIdCounter.current();
-            _safeMint(msg.sender, tokenId);
-            tokenURI(tokenId);
-            totalMinted = totalMinted.add(1);
+    function tokensOfOwner(address _owner)
+        external
+        view
+        returns (uint256[] memory)
+    {
+        uint256 tokenCount = balanceOf(_owner);
+        if (tokenCount == 0) return new uint256[](0);
+        else {
+            uint256[] memory result = new uint256[](tokenCount);
+            for (uint256 i = 0; i < tokenCount; i++) {
+                result[i] = tokenOfOwnerByIndex(_owner, i);
+            }
+            return result;
         }
     }
+
+    /********************************************* */
+    // IF WE VALIDATE ON FRONTEND DO WE NEED TWO MINT FUNCTIONS?
+    /********************************************* */
+
+    // function mintPublic(uint256 amount) public payable nonReentrant {
+    //     require(mintPaused == false);
+    //     require(amount <= 3, "Limit is 3 per wallet");
+    //     require(
+    //         totalMinted < TOTAL_SUPPLY,
+    //         "Sale has ended. Please visit us on OpenSea"
+    //     );
+    //     require(msg.value == (price * amount), "Incorrect amount of ether");
+    //     for (uint256 i = 1; i <= amount; i++) {
+    //         _tokenIdCounter.increment();
+    //         uint256 tokenId = _tokenIdCounter.current();
+    //         _safeMint(msg.sender, tokenId);
+    //         tokenURI(tokenId);
+    //         totalMinted = totalMinted.add(1);
+    //     }
+    // }
 
     /********************************************* */
     // Only Owner/Admin Functions
@@ -113,7 +127,7 @@ contract CryptoArniez is
     }
 
     function mintReserve(address _to, uint256 _amount) public onlyAdmin {
-        require(_amount > 0 && _amount <= RESERVED_ARNIES, "Amount is invalid");
+        require(_amount > 0 && _amount <= RESERVED, "Amount is invalid");
         for (uint256 i = 0; i < _amount; i++) {
             _tokenIdCounter.increment();
             uint256 tokenId = _tokenIdCounter.current();
@@ -121,7 +135,7 @@ contract CryptoArniez is
             tokenURI(tokenId);
             totalMinted = totalMinted.add(1);
         }
-        RESERVED_ARNIES = RESERVED_ARNIES.sub(_amount);
+        RESERVED = RESERVED.sub(_amount);
     }
 
     function reveal() external onlyAdmin {
@@ -136,20 +150,20 @@ contract CryptoArniez is
         maxMintAmount = _newmaxMintAmount;
     }
 
-    function setUnrevealedURI(string memory _unrevealedURI) external onlyAdmin {
-        unrevealedURI = _unrevealedURI;
-    }
+    // function setUnrevealedURI(string memory _unrevealedURI) external onlyAdmin {
+    //     unrevealedURI = _unrevealedURI;
+    // }
 
     function setBaseURI(string memory _newURI) external onlyAdmin {
         baseURI = _newURI;
     }
 
-    function setBaseExtension(string memory _newBaseExtension)
-        public
-        onlyAdmin
-    {
-        baseExtension = _newBaseExtension;
-    }
+    // function setBaseExtension(string memory _newBaseExtension)
+    //     public
+    //     onlyAdmin
+    // {
+    //     baseExtension = _newBaseExtension;
+    // }
 
     function togglePause() external onlyAdmin {
         mintPaused = !mintPaused;
@@ -159,12 +173,16 @@ contract CryptoArniez is
         payable(msg.sender).transfer(address(this).balance);
     }
 
-    function togglePresaleLive() external onlyAdmin {
-        presaleLive = !presaleLive;
+    function toggleSaleLive() external onlyAdmin {
+        saleLive = !saleLive;
     }
 
-    function togglePublicSaleLive() external onlyAdmin {
-        publicSaleLive = !publicSaleLive;
+    /********************************************* */
+    // OVERRIDES
+    /********************************************* */
+
+    function _baseURI() internal view override returns (string memory) {
+        return baseURI;
     }
 
     function supportsInterface(bytes4 interfaceId)

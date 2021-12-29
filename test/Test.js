@@ -1,7 +1,7 @@
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
 
-describe('Arnies', () => {
+describe('Hunkz', () => {
 	let contractFactory;
 	let contract;
 	let user;
@@ -10,7 +10,7 @@ describe('Arnies', () => {
 	let dev;
 
 	beforeEach(async function () {
-		contractFactory = await hre.ethers.getContractFactory('CryptoArniez');
+		contractFactory = await hre.ethers.getContractFactory('CryptoHunkz');
 		[user, whitelistUser, owner, dev] = await hre.ethers.getSigners();
 		contract = await contractFactory.deploy(owner.address);
 		await contract.deployed();
@@ -54,15 +54,9 @@ describe('Arnies', () => {
 			expect(result).to.equal(true);
 		});
 
-		it('Should toggle the pre-sale state', async function () {
-			await contract.connect(owner).togglePresaleLive();
-			let result = await contract.presaleLive();
-			expect(result).to.equal(true);
-		});
-
-		it('Should toggle the public sale state', async function () {
-			await contract.connect(owner).togglePublicSaleLive();
-			let result = await contract.publicSaleLive();
+		it('Should toggle the sale state', async function () {
+			await contract.connect(owner).toggleSaleLive();
+			let result = await contract.saleLive();
 			expect(result).to.equal(true);
 		});
 
@@ -73,7 +67,7 @@ describe('Arnies', () => {
 		});
 		it('Should decrement from the reserve amount', async function () {
 			await contract.connect(owner).mintReserve(user.address, 2);
-			let result = await contract.RESERVED_ARNIES();
+			let result = await contract.RESERVED();
 			expect(result).to.equal(18);
 		});
 	});
@@ -82,8 +76,8 @@ describe('Arnies', () => {
 		it('Should be able to mint an NFT from the public sale', async function () {
 			await contract
 				.connect(user)
-				.mintPublic(2, { value: ethers.utils.parseEther('.16') });
-			const total = await contract.getTotalMinted();
+				.mintHunk(2, { value: ethers.utils.parseEther('.16') });
+			const total = await contract.totalMinted();
 			expect(total).to.equal(2);
 		});
 
