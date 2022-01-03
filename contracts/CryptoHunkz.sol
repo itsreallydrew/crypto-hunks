@@ -64,6 +64,7 @@ contract CryptoHunkz is
     uint256 public price = 80000000000000000; //price in wei -- 0.08 ether
     uint256 public maxMintAmount = 5;
     uint256 public RESERVED = 20;
+    string public PROVENANCE; 
 
     // mapping(address => uint256) public whitelistAmount;
     mapping(address => bool) public admins;
@@ -135,6 +136,7 @@ contract CryptoHunkz is
     /********************************************* */
     // Only Owner/Admin Functions
     /********************************************* */
+
     function setAdmin(address _newAdmin) external onlyOwner {
         admins[_newAdmin] = true;
     }
