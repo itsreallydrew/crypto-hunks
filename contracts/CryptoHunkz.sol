@@ -62,6 +62,7 @@ contract CryptoHunkz is
     uint256 public totalMinted;
     uint256 public TOTAL_SUPPLY = 5000;
     uint256 public price = 80000000000000000; //price in wei -- 0.08 ether
+    // uint256 public price = .08 ether;
     uint256 public maxMintAmount = 5;
     uint256 public RESERVED = 20;
     string public PROVENANCE; 
