@@ -42,6 +42,11 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "hardhat/console.sol";
 
+contract OwnableDelegateProxy {}
+contract OpenSeaProxyRegistry{
+    mapping(address => OwnableDelegateProxy) public proxies;
+}
+
 
 contract CryptoHunkz is
     ERC721,
@@ -62,6 +67,8 @@ contract CryptoHunkz is
     uint256 public maxMintAmount = 5;
     uint256 public RESERVED = 20;
     string public PROVENANCE; 
+
+    address public immutable proxyRegistryAddress;
 
     mapping(address => bool) public whitelistClaimed;
     mapping(address => bool) public admins;
@@ -220,6 +227,12 @@ contract CryptoHunkz is
 
     function _baseURI() internal view override returns (string memory) {
         return baseURI;
+    }
+
+    function isApprovedForAll(address _owner, address _operator) public view override returns (bool) {
+        OpenSeaProxyRegistry proxyRegistry = OpenSeaProxyRegistry(proxyRegistryAddress);
+        if (address(proxyRegistryAddress.proxies(_owner)) == _operator) return true;
+        return super.isApprovedForAll(_owner, _operator);
     }
 
     // function supportsInterface(bytes4 interfaceId)
