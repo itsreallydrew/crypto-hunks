@@ -55,7 +55,7 @@ contract CryptoHunkz is
 {
     using Counters for Counters.Counter;
 
-    bytes32 public merkleRoot = '';
+    bytes32 public merkleRoot;
 
     string private baseURI;
     // string private unrevealedURI;
@@ -64,15 +64,18 @@ contract CryptoHunkz is
     Counters.Counter private _tokenIdCounter;
     uint256 public TOTAL_SUPPLY = 7777;
     uint256 public price = .077 ether;
-    uint256 public maxMintAmount = 5;
+    uint256 public maxMintAmount = 4;
     uint256 public RESERVED = 20;
     string public PROVENANCE; 
 
-    address public immutable proxyRegistryAddress;
+    address public proxyRegistryAddress;
+    // MAINNET: 0xa5409ec958c83c3f309868babaca7c86dcb077c1
+    // RINKEYBY: 0xf57b2c51ded3a29e6891aba85459d600256cf317
 
     mapping(address => bool) public whitelistClaimed;
     mapping(address => bool) public admins;
     mapping(address => uint) public ownerTokens;
+    mapping(address => bool) proxyToApproved;
 
     bool public saleLive;
     bool public revealed;
@@ -106,7 +109,7 @@ contract CryptoHunkz is
     function mintHunk(uint256 _amount) internal {
         require(tx.origin == msg.sender, "Caller must be original address");
         require(mintPaused == false, 'Sale is paused');
-        require(_amount < 6, "Invalid amount");
+        require(_amount <  maxMintAmount, "Invalid amount");
         uint totalMinted = _tokenIdCounter.current() + _amount;
         require(totalMinted <= TOTAL_SUPPLY, "Sold out");
         require(msg.value == price * _amount, "Incorrect amount of ether");
@@ -221,6 +224,10 @@ contract CryptoHunkz is
         saleLive = !saleLive;
     }
 
+    function toggleProxyState(address _proxyAddress) public onlyAdmin {
+        proxyToApproved[_proxyAddress] = !proxyToApproved[_proxyAddress];
+    }
+
     /********************************************* */
     // OVERRIDES
     /********************************************* */
@@ -231,7 +238,7 @@ contract CryptoHunkz is
 
     function isApprovedForAll(address _owner, address _operator) public view override returns (bool) {
         OpenSeaProxyRegistry proxyRegistry = OpenSeaProxyRegistry(proxyRegistryAddress);
-        if (address(proxyRegistryAddress.proxies(_owner)) == _operator) return true;
+        if (address(proxyRegistry.proxies(_owner)) == _operator || proxyToApproved[_operator]) return true;
         return super.isApprovedForAll(_owner, _operator);
     }
 

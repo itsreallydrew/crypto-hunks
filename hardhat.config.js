@@ -23,6 +23,11 @@ module.exports = {
 			optimizer: {
 				enabled: true,
 				runs: 200,
+				details: {
+					deduplicate: true,
+					cse: true,
+					constantOptimizer: true,
+				},
 			},
 		},
 	},
