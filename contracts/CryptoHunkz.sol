@@ -68,7 +68,7 @@ contract CryptoHunkz is
     uint256 public RESERVED = 20;
     string public PROVENANCE; 
 
-    address public proxyRegistryAddress;
+    // address public proxyRegistryAddress;
     // MAINNET: 0xa5409ec958c83c3f309868babaca7c86dcb077c1
     // RINKEYBY: 0xf57b2c51ded3a29e6891aba85459d600256cf317
 
@@ -87,12 +87,14 @@ contract CryptoHunkz is
         _;
     }
 
-    constructor() ERC721("CryptoHunkz", "HUNKZ") {
+    constructor(bytes32 _merkleRoot) ERC721("CryptoHunkz", "HUNKZ") {
         admins[msg.sender] = true;
+        merkleRoot = _merkleRoot;
+
         // _tokenIdCounter.increment();
     }
 
-    function whiteListMint(bytes32[] calldata _merkleProof, uint _quantity) public payable nonReentrant {
+    function whitelistMint(bytes32[] calldata _merkleProof, uint _quantity) public payable nonReentrant {
         require(whiteListActive, 'Whitelist is not active');
         require(!whitelistClaimed[msg.sender], 'Already claimed');
         bytes32 leaf = keccak256(abi.encodePacked(msg.sender));
@@ -228,6 +230,7 @@ contract CryptoHunkz is
         proxyToApproved[_proxyAddress] = !proxyToApproved[_proxyAddress];
     }
 
+
     /********************************************* */
     // OVERRIDES
     /********************************************* */
@@ -236,11 +239,11 @@ contract CryptoHunkz is
         return baseURI;
     }
 
-    function isApprovedForAll(address _owner, address _operator) public view override returns (bool) {
-        OpenSeaProxyRegistry proxyRegistry = OpenSeaProxyRegistry(proxyRegistryAddress);
-        if (address(proxyRegistry.proxies(_owner)) == _operator || proxyToApproved[_operator]) return true;
-        return super.isApprovedForAll(_owner, _operator);
-    }
+    // function isApprovedForAll(address _owner, address _operator) public view override returns (bool) {
+    //     OpenSeaProxyRegistry proxyRegistry = OpenSeaProxyRegistry(proxyRegistryAddress);
+    //     if (address(proxyRegistry.proxies(_owner)) == _operator || proxyToApproved[_operator]) return true;
+    //     return super.isApprovedForAll(_owner, _operator);
+    // }
 
     // function supportsInterface(bytes4 interfaceId)
     //     public
