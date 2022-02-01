@@ -32,4 +32,9 @@ module.exports = {
 			},
 		},
 	},
+	gasReporter: {
+		currency: 'USD',
+		coinmarketcap: process.env.COINMARKETCAP_API,
+		gasPriceApi: process.env.ETHERSCAN_API,
+	},
 };

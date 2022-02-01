@@ -35,6 +35,7 @@ console.log('Whitelist Tree\n', String(merkleTree));
 // console.log('Whitelist Tree\n', merkleTree);
 
 // console.log('Root hash:', rootHash.slice(2));
+console.log('Root hash:', rootHash);
 
 // grabs the first address from the leafNodes array
 const claimingAddress = leafNodes[1];

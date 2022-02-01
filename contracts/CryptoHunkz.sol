@@ -77,18 +77,19 @@ contract CryptoHunkz is
     mapping(address => uint) public ownerTokens;
     mapping(address => bool) proxyToApproved;
 
-    bool public saleLive;
+    bool public saleLive = true;
     bool public revealed;
     bool public mintPaused;
-    bool public whiteListActive;
+    bool public whiteListActive = true;
 
     modifier onlyAdmin() {
         require(admins[msg.sender], "Only admins can call this function");
         _;
     }
 
-    constructor(bytes32 _merkleRoot) ERC721("CryptoHunkz", "HUNKZ") {
-        admins[msg.sender] = true;
+    constructor(address _address, bytes32 _merkleRoot) ERC721("CryptoHunkz", "HUNKZ") {
+        admins[_address] = true;
+        // admins[msg.sender] = true;
         merkleRoot = _merkleRoot;
 
         // _tokenIdCounter.increment();
@@ -98,7 +99,7 @@ contract CryptoHunkz is
         require(whiteListActive, 'Whitelist is not active');
         require(!whitelistClaimed[msg.sender], 'Already claimed');
         bytes32 leaf = keccak256(abi.encodePacked(msg.sender));
-        require(MerkleProof.verify(_merkleProof, merkleRoot, leaf));
+        require(MerkleProof.verify(_merkleProof, merkleRoot, leaf), 'whitelist user not verified');
         whitelistClaimed[msg.sender] = true;
         mintHunk(_quantity);
     }
@@ -140,27 +141,6 @@ contract CryptoHunkz is
     //             result[i] = tokenOfOwnerByIndex(_owner, i);
     //         }
     //         return result;
-    //     }
-    // }
-
-    /********************************************* */
-    // IF WE VALIDATE ON FRONTEND DO WE NEED TWO MINT FUNCTIONS?
-    /********************************************* */
-
-    // function mintPublic(uint256 amount) public payable nonReentrant {
-    //     require(mintPaused == false);
-    //     require(amount <= 3, "Limit is 3 per wallet");
-    //     require(
-    //         totalMinted < TOTAL_SUPPLY,
-    //         "Sale has ended. Please visit us on OpenSea"
-    //     );
-    //     require(msg.value == (price * amount), "Incorrect amount of ether");
-    //     for (uint256 i = 1; i <= amount; i++) {
-    //         _tokenIdCounter.increment();
-    //         uint256 tokenId = _tokenIdCounter.current();
-    //         _safeMint(msg.sender, tokenId);
-    //         tokenURI(tokenId);
-    //         totalMinted = totalMinted.add(1);
     //     }
     // }
 
@@ -228,6 +208,10 @@ contract CryptoHunkz is
 
     function toggleProxyState(address _proxyAddress) public onlyAdmin {
         proxyToApproved[_proxyAddress] = !proxyToApproved[_proxyAddress];
+    }
+
+    function setRoot(bytes32 _merkleRoot) public onlyAdmin {
+        merkleRoot = _merkleRoot;
     }
 
 
