@@ -62,10 +62,11 @@ contract CryptoHunkz is
     // string private baseExtension;
 
     Counters.Counter private _tokenIdCounter;
-    uint256 public TOTAL_SUPPLY = 7777;
+    uint256 public TOTAL_SUPPLY = 7778; // total supply is 7777 using 7778 for gas optimization
+    uint256 public PUBLIC_SUPPLY = 7728; // total public is 7727 using 7728 for gas optimization
     uint256 public price = .077 ether;
-    uint256 public maxMintAmount = 4;
-    uint256 public RESERVED = 20;
+    uint256 public maxMintAmount = 6; // max amount is 5
+    uint256 public RESERVED = 21; // amount reserved is 20
     string public PROVENANCE; 
 
     // address public proxyRegistryAddress;
@@ -114,7 +115,7 @@ contract CryptoHunkz is
         require(mintPaused == false, 'Sale is paused');
         require(_amount <  maxMintAmount, "Invalid amount");
         uint totalMinted = _tokenIdCounter.current() + _amount;
-        require(totalMinted <= TOTAL_SUPPLY, "Sold out");
+        require(totalMinted < PUBLIC_SUPPLY, "Sold out");
         require(msg.value == price * _amount, "Incorrect amount of ether");
         for (uint256 i = 1; i <= _amount; i++) {
             _tokenIdCounter.increment();
@@ -206,11 +207,11 @@ contract CryptoHunkz is
         saleLive = !saleLive;
     }
 
-    function toggleProxyState(address _proxyAddress) public onlyAdmin {
+    function toggleProxyState(address _proxyAddress) external onlyAdmin {
         proxyToApproved[_proxyAddress] = !proxyToApproved[_proxyAddress];
     }
 
-    function setRoot(bytes32 _merkleRoot) public onlyAdmin {
+    function setRoot(bytes32 _merkleRoot) external onlyAdmin {
         merkleRoot = _merkleRoot;
     }
 
