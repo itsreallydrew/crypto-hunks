@@ -26,10 +26,7 @@ contract ERC721 is Context, ERC165, IERC721, IERC721Metadata {
     string private _symbol;
 
     // Mapping from token ID to owner address
-    mapping(uint256 => address) private _owners;
-
-    // Mapping owner address to token count
-    mapping(address => uint256) private _balances;
+    address[] internal _owners;
 
     // Mapping from token ID to approved address
     mapping(uint256 => address) private _tokenApprovals;
@@ -75,7 +72,12 @@ contract ERC721 is Context, ERC165, IERC721, IERC721Metadata {
             owner != address(0),
             "ERC721: balance query for the zero address"
         );
-        return _balances[owner];
+        uint count;
+        for( uint i; i < _owners.length; ++i ){
+          if( owner == _owners[i] )
+            ++count;
+        }
+        return count;
     }
 
     /**
@@ -284,7 +286,8 @@ contract ERC721 is Context, ERC165, IERC721, IERC721Metadata {
      * and stop existing when they are burned (`_burn`).
      */
     function _exists(uint256 tokenId) internal view virtual returns (bool) {
-        return _owners[tokenId] != address(0);
+        return tokenId < _owners.length && 
+        _owners[tokenId] != address(0);
     }
 
     /**
@@ -358,8 +361,7 @@ contract ERC721 is Context, ERC165, IERC721, IERC721Metadata {
 
         _beforeTokenTransfer(address(0), to, tokenId);
 
-        _balances[to] += 1;
-        _owners[tokenId] = to;
+        _owners.push(to);
 
         emit Transfer(address(0), to, tokenId);
     }
@@ -381,9 +383,7 @@ contract ERC721 is Context, ERC165, IERC721, IERC721Metadata {
 
         // Clear approvals
         _approve(address(0), tokenId);
-
-        _balances[owner] -= 1;
-        delete _owners[tokenId];
+        _owners[tokenId] = address(0);
 
         emit Transfer(owner, address(0), tokenId);
     }
@@ -414,9 +414,6 @@ contract ERC721 is Context, ERC165, IERC721, IERC721Metadata {
 
         // Clear approvals from the previous owner
         _approve(address(0), tokenId);
-
-        _balances[from] -= 1;
-        _balances[to] += 1;
         _owners[tokenId] = to;
 
         emit Transfer(from, to, tokenId);
