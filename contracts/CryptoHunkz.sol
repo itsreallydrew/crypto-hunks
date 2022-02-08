@@ -53,20 +53,20 @@ contract OpenSeaProxyRegistry{
 contract CryptoHunkz is
     ERC721Enumerable
 {
-    // using Counters for Counters.Counter;
+
 
     bytes32 public merkleRoot;
 
     string private baseURI;
-    // string private unrevealedURI;
-    // string private baseExtension;
 
     uint256 public TOTAL_SUPPLY = 7778; // total supply is 7777 using 7778 for gas optimization
-    uint256 public PUBLIC_SUPPLY = 7728; // total public is 7727 using 7728 for gas optimization
+    uint256 public PUBLIC_SUPPLY = 7758; // total public is 7727 using 7728 for gas optimization
     uint256 public price = .077 ether;
     uint256 public maxMintAmount = 6; // max amount is 5
+    uint256 public maxWLAmount = 4; // max amount is 3
+
     uint256 public RESERVED = 21; // amount reserved is 20
-    string public PROVENANCE; 
+    // string public PROVENANCE; 
 
     address public proxyRegistryAddress;
     // MAINNET: 0xa5409ec958c83c3f309868babaca7c86dcb077c1
@@ -87,16 +87,15 @@ contract CryptoHunkz is
     }
 
     constructor() ERC721("CryptoHunkz", "HUNKZ") {
-        // admins[_address] = true;
-        // admins[msg.sender] = true;
-        // merkleRoot = _merkleRoot;
+        admins[msg.sender] = true;
     }
 
     function whitelistMint(bytes32[] calldata _merkleProof, uint _quantity) public payable {
         require(whiteListActive, 'Whitelist is not active');
+        require(_quantity < maxWLAmount, 'Max amount is 3');
         require(!whitelistClaimed[msg.sender], 'Already claimed');
         bytes32 leaf = keccak256(abi.encodePacked(msg.sender));
-        require(MerkleProof.verify(_merkleProof, merkleRoot, leaf), 'whitelist user not verified');
+        require(MerkleProof.verify(_merkleProof, merkleRoot, leaf), 'Whitelist user not verified');
         whitelistClaimed[msg.sender] = true;
         mintHunk(_quantity);
     }
@@ -116,7 +115,6 @@ contract CryptoHunkz is
         for (uint256 i = 1; i <= _amount; i++) {
             _safeMint(msg.sender, totalSupply + i);
         }
-        // ownerTokens[msg.sender] = _amount;
     }
 
     /********************************************* */
@@ -127,10 +125,10 @@ contract CryptoHunkz is
         admins[_newAdmin] = true;
     }
 
-    function mintReserve(address _to, uint256 _amount) public onlyAdmin {
-        require(_amount > 0 && _amount <= RESERVED, "Amount is invalid");
+    function mintReserve(address _to, uint256 _amount) external onlyAdmin {
+        require(_amount < RESERVED, "Amount is invalid");
         uint totalSupply = _owners.length;
-        for (uint256 i = 0; i < _amount; i++) {
+        for (uint256 i = 1; i <= _amount; i++) {
             _safeMint(_to, totalSupply + i);
         }
         RESERVED = RESERVED -= _amount;
@@ -148,20 +146,9 @@ contract CryptoHunkz is
         maxMintAmount = _newmaxMintAmount;
     }
 
-    // function setUnrevealedURI(string memory _unrevealedURI) external onlyAdmin {
-    //     unrevealedURI = _unrevealedURI;
-    // }
-
     function setBaseURI(string memory _newURI) external onlyAdmin {
         baseURI = _newURI;
     }
-
-    // function setBaseExtension(string memory _newBaseExtension)
-    //     public
-    //     onlyAdmin
-    // {
-    //     baseExtension = _newBaseExtension;
-    // }
 
     function toggleWhiteList() external onlyAdmin {
         whiteListActive = !whiteListActive;
