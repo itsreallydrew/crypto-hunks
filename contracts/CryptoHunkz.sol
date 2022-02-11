@@ -57,7 +57,7 @@ contract CryptoHunkz is
 
     bytes32 public merkleRoot;
 
-    string private baseURI;
+    string public baseURI;
 
     uint256 public TOTAL_SUPPLY = 7778; // total supply is 7777 using 7778 for gas optimization
     uint256 public PUBLIC_SUPPLY = 7758; // total public is 7727 using 7728 for gas optimization
@@ -125,11 +125,11 @@ contract CryptoHunkz is
         admins[_newAdmin] = true;
     }
 
-    function mintReserve(address _to, uint256 _amount) external onlyAdmin {
+    function mintReserve(uint256 _amount) external onlyAdmin {
         require(_amount < RESERVED, "Amount is invalid");
         uint totalSupply = _owners.length;
         for (uint256 i = 1; i <= _amount; i++) {
-            _safeMint(_to, totalSupply + i);
+            _safeMint(_msgSender(), totalSupply + i);
         }
         RESERVED = RESERVED -= _amount;
     }
