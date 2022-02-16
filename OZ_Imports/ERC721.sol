@@ -366,27 +366,6 @@ contract ERC721 is Context, ERC165, IERC721, IERC721Metadata {
         emit Transfer(address(0), to, tokenId);
     }
 
-    /**
-     * @dev Destroys `tokenId`.
-     * The approval is cleared when the token is burned.
-     *
-     * Requirements:
-     *
-     * - `tokenId` must exist.
-     *
-     * Emits a {Transfer} event.
-     */
-    function _burn(uint256 tokenId) internal virtual {
-        address owner = ERC721.ownerOf(tokenId);
-
-        _beforeTokenTransfer(owner, address(0), tokenId);
-
-        // Clear approvals
-        _approve(address(0), tokenId);
-        _owners[tokenId] = address(0);
-
-        emit Transfer(owner, address(0), tokenId);
-    }
 
     /**
      * @dev Transfers `tokenId` from `from` to `to`.

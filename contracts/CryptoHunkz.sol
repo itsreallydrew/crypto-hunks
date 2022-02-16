@@ -58,6 +58,7 @@ contract CryptoHunkz is
     bytes32 public merkleRoot;
 
     string public baseURI;
+    string public defaultURI;
 
     uint256 public TOTAL_SUPPLY = 7778; // total supply is 7777 using 7778 for gas optimization
     uint256 public PUBLIC_SUPPLY = 7758; // total public is 7727 using 7728 for gas optimization
@@ -86,8 +87,9 @@ contract CryptoHunkz is
         _;
     }
 
-    constructor() ERC721("CryptoHunkz", "HUNKZ") {
+    constructor(string memory _initURI) ERC721("CryptoHunkz", "HUNKZ") {
         admins[msg.sender] = true;
+        defaultURI = _initURI;
     }
 
     function whitelistMint(bytes32[] calldata _merkleProof, uint _quantity) public payable {
@@ -113,7 +115,7 @@ contract CryptoHunkz is
         require(totalSupply < PUBLIC_SUPPLY, "Sold out");
         require(msg.value == price * _amount, "Incorrect amount of ether");
         for (uint256 i = 1; i <= _amount; i++) {
-            _safeMint(msg.sender, totalSupply + i);
+            _mint(msg.sender, totalSupply + i);
         }
     }
 
@@ -129,7 +131,7 @@ contract CryptoHunkz is
         require(_amount < RESERVED, "Amount is invalid");
         uint totalSupply = _owners.length;
         for (uint256 i = 1; i <= _amount; i++) {
-            _safeMint(_msgSender(), totalSupply + i);
+            _mint(_msgSender(), totalSupply + i);
         }
         RESERVED = RESERVED -= _amount;
     }
@@ -148,6 +150,10 @@ contract CryptoHunkz is
 
     function setBaseURI(string memory _newURI) external onlyAdmin {
         baseURI = _newURI;
+    }
+
+    function setDefaultURI(string memory _URI) external onlyAdmin {
+        defaultURI = _URI;
     }
 
     function toggleWhiteList() external onlyAdmin {
@@ -181,6 +187,33 @@ contract CryptoHunkz is
     /********************************************* */
     // OVERRIDES
     /********************************************* */
+    function _mint(address to, uint256 tokenId) internal virtual override {
+        require(to != address(0), "ERC721: mint to the zero address");
+        require(!_exists(tokenId), "ERC721: token already minted");
+        _owners.push(to);
+        emit Transfer(address(0), to, tokenId);
+    }
+
+
+        function tokenURI(uint256 tokenId)
+        public
+        view
+        virtual
+        override
+        returns (string memory)
+    {
+        require(
+            _exists(tokenId),
+            "ERC721Metadata: URI query for nonexistent token"
+        );
+
+        if (revealed == false) return defaultURI;
+
+        return
+            bytes(baseURI).length > 0
+                ? string(abi.encodePacked(baseURI, Strings.toString(tokenId)))
+                : "";
+    }
 
     function _baseURI() internal view override returns (string memory) {
         return baseURI;
