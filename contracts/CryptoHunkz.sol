@@ -19,15 +19,12 @@ pragma solidity ^0.8.0;
 // Imports from Open Zeppelin
 /********************************************* */
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
-
+// import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
+// import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+// import "@openzeppelin/contracts/access/AccessControl.sol";
 // import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 // import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
 // import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol";
-// import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 // import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 // import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
 // import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Holder.sol";
@@ -38,120 +35,103 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 // import "@openzeppelin/contracts/utils/Strings.sol";
 // import "@openzeppelin/contracts/security/Pausable.sol";
 
-import "@openzeppelin/contracts/utils/Counters.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "../OZ_Imports/ERC721Enumerable.sol";
+
+// import "@openzeppelin/contracts/access/Ownable.sol";
+// import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
+// import "@openzeppelin/contracts/utils/Counters.sol";
+// import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "hardhat/console.sol";
 
-// import "../OZ_Imports/ERC721Enumberable.sol";
+contract OwnableDelegateProxy {}
+contract OpenSeaProxyRegistry{
+    mapping(address => OwnableDelegateProxy) public proxies;
+}
+
 
 contract CryptoHunkz is
-    ERC721Enumerable,
-    ReentrancyGuard,
-    AccessControl,
-    Ownable
+    ERC721Enumerable
 {
-    using Counters for Counters.Counter;
-    using SafeMath for uint256;
-    using Address for address;
 
-    string private baseURI;
-    // string private unrevealedURI;
-    // string private baseExtension;
 
-    Counters.Counter private _tokenIdCounter;
-    uint256 public totalMinted;
-    uint256 public TOTAL_SUPPLY = 5000;
-    uint256 public price = 80000000000000000; //price in wei -- 0.08 ether
-    // uint256 public price = .08 ether;
-    uint256 public maxMintAmount = 5;
-    uint256 public RESERVED = 20;
-    string public PROVENANCE; 
+    bytes32 public merkleRoot;
 
-    // mapping(address => uint256) public whitelistAmount;
+    string public baseURI;
+
+    uint256 public TOTAL_SUPPLY = 7778; // total supply is 7777 using 7778 for gas optimization
+    uint256 public PUBLIC_SUPPLY = 7758; // total public is 7727 using 7728 for gas optimization
+    uint256 public price = .077 ether;
+    uint256 public maxMintAmount = 6; // max amount is 5
+    uint256 public maxWLAmount = 4; // max amount is 3
+
+    uint256 public RESERVED = 21; // amount reserved is 20
+    // string public PROVENANCE; 
+
+    address public proxyRegistryAddress;
+    // MAINNET: 0xa5409ec958c83c3f309868babaca7c86dcb077c1
+    // RINKEYBY: 0xf57b2c51ded3a29e6891aba85459d600256cf317
+
+    mapping(address => bool) public whitelistClaimed;
     mapping(address => bool) public admins;
+    // mapping(address => uint) public ownerTokens;
+    mapping(address => bool) proxyToApproved;
 
     bool public saleLive;
     bool public revealed;
-    bool public mintPaused;
+    bool public whiteListActive = true;
 
     modifier onlyAdmin() {
         require(admins[msg.sender], "Only admins can call this function");
         _;
     }
 
-    constructor(address _owner) ERC721("CryptoHunkz", "HUNKZ") {
-        admins[_owner] = true;
+    constructor() ERC721("CryptoHunkz", "HUNKZ") {
+        admins[msg.sender] = true;
     }
 
-    function mintHunk(uint256 _amount) public payable nonReentrant {
-        require(mintPaused == false);
-        require(_amount <= 3 && _amount > 0, "Invalid amount");
-        require(totalMinted + _amount <= TOTAL_SUPPLY, "Sold out");
-        require(msg.value == price.mul(_amount), "Incorrect amount of ether");
+    function whitelistMint(bytes32[] calldata _merkleProof, uint _quantity) public payable {
+        require(whiteListActive, 'Whitelist is not active');
+        require(_quantity < maxWLAmount, 'Max amount is 3');
+        require(!whitelistClaimed[msg.sender], 'Already claimed');
+        bytes32 leaf = keccak256(abi.encodePacked(msg.sender));
+        require(MerkleProof.verify(_merkleProof, merkleRoot, leaf), 'Whitelist user not verified');
+        whitelistClaimed[msg.sender] = true;
+        mintHunk(_quantity);
+    }
+
+    function publicMint(uint _quantity) public payable {
+        require(!whiteListActive, 'Whitelist is active');
+        mintHunk(_quantity);
+    }
+
+    function mintHunk(uint256 _amount) internal {
+        require(tx.origin == msg.sender, "Caller must be original address");
+        require(saleLive == true, 'Sale is paused');
+        require(_amount <  maxMintAmount, "Invalid amount");
+        uint totalSupply = _owners.length;
+        require(totalSupply < PUBLIC_SUPPLY, "Sold out");
+        require(msg.value == price * _amount, "Incorrect amount of ether");
         for (uint256 i = 1; i <= _amount; i++) {
-            _tokenIdCounter.increment();
-            uint256 tokenId = _tokenIdCounter.current();
-            _safeMint(msg.sender, tokenId);
-            tokenURI(tokenId);
-            totalMinted = totalMinted.add(1);
+            _safeMint(msg.sender, totalSupply + i);
         }
     }
-
-    function tokensOfOwner(address _owner)
-        external
-        view
-        returns (uint256[] memory)
-    {
-        uint256 tokenCount = balanceOf(_owner);
-        if (tokenCount == 0) return new uint256[](0);
-        else {
-            uint256[] memory result = new uint256[](tokenCount);
-            for (uint256 i = 0; i < tokenCount; i++) {
-                result[i] = tokenOfOwnerByIndex(_owner, i);
-            }
-            return result;
-        }
-    }
-
-    /********************************************* */
-    // IF WE VALIDATE ON FRONTEND DO WE NEED TWO MINT FUNCTIONS?
-    /********************************************* */
-
-    // function mintPublic(uint256 amount) public payable nonReentrant {
-    //     require(mintPaused == false);
-    //     require(amount <= 3, "Limit is 3 per wallet");
-    //     require(
-    //         totalMinted < TOTAL_SUPPLY,
-    //         "Sale has ended. Please visit us on OpenSea"
-    //     );
-    //     require(msg.value == (price * amount), "Incorrect amount of ether");
-    //     for (uint256 i = 1; i <= amount; i++) {
-    //         _tokenIdCounter.increment();
-    //         uint256 tokenId = _tokenIdCounter.current();
-    //         _safeMint(msg.sender, tokenId);
-    //         tokenURI(tokenId);
-    //         totalMinted = totalMinted.add(1);
-    //     }
-    // }
 
     /********************************************* */
     // Only Owner/Admin Functions
     /********************************************* */
 
-    function setAdmin(address _newAdmin) external onlyOwner {
+    function setAdmin(address _newAdmin) external onlyAdmin {
         admins[_newAdmin] = true;
     }
 
-    function mintReserve(address _to, uint256 _amount) public onlyAdmin {
-        require(_amount > 0 && _amount <= RESERVED, "Amount is invalid");
-        for (uint256 i = 0; i < _amount; i++) {
-            _tokenIdCounter.increment();
-            uint256 tokenId = _tokenIdCounter.current();
-            _safeMint(_to, tokenId);
-            tokenURI(tokenId);
-            totalMinted = totalMinted.add(1);
+    function mintReserve(uint256 _amount) external onlyAdmin {
+        require(_amount < RESERVED, "Amount is invalid");
+        uint totalSupply = _owners.length;
+        for (uint256 i = 1; i <= _amount; i++) {
+            _safeMint(_msgSender(), totalSupply + i);
         }
-        RESERVED = RESERVED.sub(_amount);
+        RESERVED = RESERVED -= _amount;
     }
 
     function reveal() external onlyAdmin {
@@ -166,23 +146,12 @@ contract CryptoHunkz is
         maxMintAmount = _newmaxMintAmount;
     }
 
-    // function setUnrevealedURI(string memory _unrevealedURI) external onlyAdmin {
-    //     unrevealedURI = _unrevealedURI;
-    // }
-
     function setBaseURI(string memory _newURI) external onlyAdmin {
         baseURI = _newURI;
     }
 
-    // function setBaseExtension(string memory _newBaseExtension)
-    //     public
-    //     onlyAdmin
-    // {
-    //     baseExtension = _newBaseExtension;
-    // }
-
-    function togglePause() external onlyAdmin {
-        mintPaused = !mintPaused;
+    function toggleWhiteList() external onlyAdmin {
+        whiteListActive = !whiteListActive;
     }
 
     function withdraw() external onlyAdmin {
@@ -193,6 +162,22 @@ contract CryptoHunkz is
         saleLive = !saleLive;
     }
 
+    function toggleProxyState(address _proxyAddress) external onlyAdmin {
+        proxyToApproved[_proxyAddress] = !proxyToApproved[_proxyAddress];
+    }
+
+    function setRoot(bytes32 _merkleRoot) external onlyAdmin {
+        merkleRoot = _merkleRoot;
+    }
+
+    function setProxyRegistryAddress(address _proxyRegistryAddress)
+        external
+        onlyAdmin
+    {
+        proxyRegistryAddress = _proxyRegistryAddress;
+    }
+
+
     /********************************************* */
     // OVERRIDES
     /********************************************* */
@@ -201,15 +186,21 @@ contract CryptoHunkz is
         return baseURI;
     }
 
+    function isApprovedForAll(address _owner, address _operator) public view override returns (bool) {
+        OpenSeaProxyRegistry proxyRegistry = OpenSeaProxyRegistry(proxyRegistryAddress);
+        if (address(proxyRegistry.proxies(_owner)) == _operator || proxyToApproved[_operator]) return true;
+        return super.isApprovedForAll(_owner, _operator);
+    }
+
     function supportsInterface(bytes4 interfaceId)
         public
         view
         virtual
-        override(AccessControl, ERC721Enumerable)
+        override
         returns (bool)
     {
         return
-            interfaceId == type(IAccessControl).interfaceId ||
+            interfaceId == interfaceId ||
             super.supportsInterface(interfaceId);
     }
 }

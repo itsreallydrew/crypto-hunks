@@ -1,18 +1,19 @@
 const { expect } = require('chai');
-const { ethers } = require('hardhat');
+const { ethers, artifacts } = require('hardhat');
+const { rootHash, hexProof } = require('./MerkleTree-test');
 
 describe('Hunkz', () => {
 	let contractFactory;
 	let contract;
 	let user;
-	let whitelistUser;
 	let owner;
 	let dev;
+	let whitelistUser = '0x70997970c51812dc3a010c7d01b50e0d17dc79c8';
 
 	beforeEach(async function () {
 		contractFactory = await hre.ethers.getContractFactory('CryptoHunkz');
 		[user, whitelistUser, owner, dev] = await hre.ethers.getSigners();
-		contract = await contractFactory.deploy(owner.address);
+		contract = await contractFactory.connect(owner).deploy(rootHash);
 		await contract.deployed();
 	});
 
@@ -62,7 +63,7 @@ describe('Hunkz', () => {
 
 		it('Should increment the total supply', async function () {
 			await contract.connect(owner).mintReserve(user.address, 2);
-			let result = await contract.totalMinted();
+			let result = await contract.totalTokensMinted();
 			expect(result).to.equal(2);
 		});
 		it('Should decrement from the reserve amount', async function () {
@@ -76,19 +77,49 @@ describe('Hunkz', () => {
 		it('Should be able to mint an NFT from the public sale', async function () {
 			await contract
 				.connect(user)
-				.mintHunk(2, { value: ethers.utils.parseEther('.16') });
-			const total = await contract.totalMinted();
+				.publicMint(2, { value: ethers.utils.parseEther('.154') });
+			const total = await contract.totalTokensMinted();
 			expect(total).to.equal(2);
 		});
 
-		// it('Should be able to mint an NFT from the presale', async function () {
-		// 	await contract
-		// 		.connect(whitelistUser)
-		// 		.mintPresale(whitelistUser.address, 1, {
-		// 			value: ethers.utils.parseEther('.08'),
-		// 		});
-		// 	const total = await contract.getTotalMinted();
-		// 	expect(total).to.equal(1);
-		// });
+		it('Should be able to check price', async function () {
+			let result = await contract.connect(user).price();
+			expect(result).to.equal(ethers.utils.parseEther('.077'));
+		});
+
+		it('Should allow user to check max mint amount', async function () {
+			let result = await contract.connect(user).maxMintAmount();
+			expect(result).to.equal(4);
+		});
+
+		it('Should allow user to check total supply of collection', async function () {
+			let result = await contract.connect(user).TOTAL_SUPPLY();
+			expect(result).to.equal(7777);
+		});
+
+		it('Should allow user to check total number minted', async function () {
+			await contract
+				.connect(user)
+				.publicMint(2, { value: ethers.utils.parseEther('.154') });
+			let total = await contract.connect(user).totalTokensMinted();
+			expect(2).to.equal(total);
+		});
+	});
+	describe('Whitelist minting process', () => {
+		it('Should set whitelist to active', async function () {
+			await contract.connect(owner).toggleWhiteList();
+			const result = await contract.connect(owner).whiteListActive();
+			expect(result).to.equal(true);
+		});
+
+		it('Should be able to mint an NFT from the whitelist', async function () {
+			await contract.connect(owner).toggleWhiteList();
+
+			await contract.connect(whitelistUser).whitelistMint(hexProof, 1, {
+				value: ethers.utils.parseEther('.077'),
+			});
+			const total = await contract.connect(owner).totalTokensMinted();
+			expect(total).to.equal(1);
+		});
 	});
 });
