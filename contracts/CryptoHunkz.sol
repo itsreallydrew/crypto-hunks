@@ -12,7 +12,6 @@
 
 */
 
-
 pragma solidity ^0.8.0;
 
 /********************************************* */
@@ -35,43 +34,50 @@ pragma solidity ^0.8.0;
 // import "@openzeppelin/contracts/utils/Strings.sol";
 // import "@openzeppelin/contracts/security/Pausable.sol";
 
-import "../OZ_Imports/ERC721Enumerable.sol";
+// import "../OZ_Imports/ERC721Enumerable.sol";
+
+import "../OZ_Imports/ERC721-M.sol";
+import "../OZ_Imports/ECDSA.sol";
+
 
 // import "@openzeppelin/contracts/access/Ownable.sol";
 // import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
+// import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 // import "@openzeppelin/contracts/utils/Counters.sol";
 // import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "hardhat/console.sol";
 
 contract OwnableDelegateProxy {}
-contract OpenSeaProxyRegistry{
+
+contract OpenSeaProxyRegistry {
     mapping(address => OwnableDelegateProxy) public proxies;
 }
 
+contract CryptoHunkz is ERC721 {
+    // bytes32 public merkleRoot;
 
-contract CryptoHunkz is
-    ERC721Enumerable
-{
-
-
-    bytes32 public merkleRoot;
+    using ECDSA for bytes32;
 
     string public baseURI;
-    string public defaultURI;
+    string public hiddenURI;
+    string public suffix = ".json";
 
-    uint256 public TOTAL_SUPPLY = 7778; // total supply is 7777 using 7778 for gas optimization
-    uint256 public PUBLIC_SUPPLY = 7758; // total public is 7727 using 7728 for gas optimization
+    uint256 public MAX_SUPPLY = 7779; // total supply is 7777 using 7778 for gas optimization. Because we're having total supply start at 1 we need to increase from 7777 to 7778. And because we don't want to do <= we increase by an additional 1 to get 7779
+
+    uint256 public totalSupply = 1; // look at Jeffrey Scholz - Donkeverse contract for refresher on using this. Modifying how we approach the contract.
+    uint256 public PUBLIC_SUPPLY = 7759; // total public is 7727 using 7729 to get rid of double checks and increase an additional because total Minted starting at 1.
     uint256 public price = .077 ether;
     uint256 public maxMintAmount = 6; // max amount is 5
     uint256 public maxWLAmount = 4; // max amount is 3
 
     uint256 public RESERVED = 21; // amount reserved is 20
-    // string public PROVENANCE; 
+    // string public PROVENANCE;
 
     address public proxyRegistryAddress;
     // MAINNET: 0xa5409ec958c83c3f309868babaca7c86dcb077c1
     // RINKEYBY: 0xf57b2c51ded3a29e6891aba85459d600256cf317
+
+    address private signerAddress;
 
     mapping(address => bool) public whitelistClaimed;
     mapping(address => bool) public admins;
@@ -89,32 +95,46 @@ contract CryptoHunkz is
 
     constructor(string memory _initURI) ERC721("CryptoHunkz", "HUNKZ") {
         admins[msg.sender] = true;
-        defaultURI = _initURI;
+        hiddenURI = _initURI;
     }
 
-    function whitelistMint(bytes32[] calldata _merkleProof, uint _quantity) public payable {
-        require(whiteListActive, 'Whitelist is not active');
-        require(_quantity < maxWLAmount, 'Max amount is 3');
-        require(!whitelistClaimed[msg.sender], 'Already claimed');
-        bytes32 leaf = keccak256(abi.encodePacked(msg.sender));
-        require(MerkleProof.verify(_merkleProof, merkleRoot, leaf), 'Whitelist user not verified');
-        whitelistClaimed[msg.sender] = true;
-        mintHunk(_quantity);
-    }
-
-    function publicMint(uint _quantity) public payable {
-        require(!whiteListActive, 'Whitelist is active');
-        mintHunk(_quantity);
-    }
-
-    function mintHunk(uint256 _amount) internal {
+    function whitelistMint(bytes calldata _signature, uint256 _quantity)
+        external
+        payable
+    {
+        uint256 _totalSupply = totalSupply;
         require(tx.origin == msg.sender, "Caller must be original address");
-        require(saleLive == true, 'Sale is paused');
-        require(_amount <  maxMintAmount, "Invalid amount");
-        uint totalSupply = _owners.length;
+        require(_totalSupply < MAX_SUPPLY, "sold out");
+        require(whiteListActive, "Whitelist is not active");
+        require(saleLive == true, "Sale is paused");
+        require(_quantity < maxWLAmount, "Max amount is 3");
+        require(msg.value == price * _quantity, "Incorrect amount of ether");
+        require(!whitelistClaimed[msg.sender], "Already claimed");
+        // Switching over to Public signature instead of Merkle Root
+        require(signerAddress == keccak256(
+            abi.encodePacked(
+                "\x19Ethereum Signed Message:\n32", 
+                bytes32(uint256(uint160(msg.sender)))))
+            .recover(_signature), "Not on list");
+
+        whitelistClaimed[msg.sender] = true;
+        for (uint256 i = 1; i <= _quantity; i++) {
+            _mint(msg.sender, totalSupply + i);
+        }
+        unchecked {
+        _totalSupply + _quantity;
+        }
+        _totalSupply = totalSupply;
+    }
+
+    function publicMint(uint256 _quantity) external payable {
+        require(!whiteListActive, "Whitelist is active");
+        require(tx.origin == msg.sender, "Caller must be original address");
+        require(saleLive == true, "Sale is paused");
+        require(_quantity < maxMintAmount, "Invalid amount");
         require(totalSupply < PUBLIC_SUPPLY, "Sold out");
-        require(msg.value == price * _amount, "Incorrect amount of ether");
-        for (uint256 i = 1; i <= _amount; i++) {
+        require(msg.value == price * _quantity, "Incorrect amount of ether");
+        for (uint256 i = 1; i <= _quantity; i++) {
             _mint(msg.sender, totalSupply + i);
         }
     }
@@ -129,9 +149,9 @@ contract CryptoHunkz is
 
     function mintReserve(uint256 _amount) external onlyAdmin {
         require(_amount < RESERVED, "Amount is invalid");
-        uint totalSupply = _owners.length;
+        uint256 _totalSupply = totalSupply;
         for (uint256 i = 1; i <= _amount; i++) {
-            _mint(_msgSender(), totalSupply + i);
+            _mint(_msgSender(), _totalSupply + i);
         }
         RESERVED = RESERVED -= _amount;
     }
@@ -152,10 +172,6 @@ contract CryptoHunkz is
         baseURI = _newURI;
     }
 
-    function setDefaultURI(string memory _URI) external onlyAdmin {
-        defaultURI = _URI;
-    }
-
     function toggleWhiteList() external onlyAdmin {
         whiteListActive = !whiteListActive;
     }
@@ -172,9 +188,9 @@ contract CryptoHunkz is
         proxyToApproved[_proxyAddress] = !proxyToApproved[_proxyAddress];
     }
 
-    function setRoot(bytes32 _merkleRoot) external onlyAdmin {
-        merkleRoot = _merkleRoot;
-    }
+    // function setRoot(bytes32 _merkleRoot) external onlyAdmin {
+    //     merkleRoot = _merkleRoot;
+    // }
 
     function setProxyRegistryAddress(address _proxyRegistryAddress)
         external
@@ -182,7 +198,6 @@ contract CryptoHunkz is
     {
         proxyRegistryAddress = _proxyRegistryAddress;
     }
-
 
     /********************************************* */
     // OVERRIDES
@@ -194,8 +209,7 @@ contract CryptoHunkz is
         emit Transfer(address(0), to, tokenId);
     }
 
-
-        function tokenURI(uint256 tokenId)
+    function tokenURI(uint256 tokenId)
         public
         view
         virtual
@@ -207,11 +221,13 @@ contract CryptoHunkz is
             "ERC721Metadata: URI query for nonexistent token"
         );
 
-        if (revealed == false) return defaultURI;
+        if (revealed == false) return hiddenURI;
 
         return
             bytes(baseURI).length > 0
-                ? string(abi.encodePacked(baseURI, Strings.toString(tokenId)))
+                ? string(
+                    abi.encodePacked(baseURI, Strings.toString(tokenId), suffix)
+                )
                 : "";
     }
 
@@ -219,9 +235,19 @@ contract CryptoHunkz is
         return baseURI;
     }
 
-    function isApprovedForAll(address _owner, address _operator) public view override returns (bool) {
-        OpenSeaProxyRegistry proxyRegistry = OpenSeaProxyRegistry(proxyRegistryAddress);
-        if (address(proxyRegistry.proxies(_owner)) == _operator || proxyToApproved[_operator]) return true;
+    function isApprovedForAll(address _owner, address _operator)
+        public
+        view
+        override
+        returns (bool)
+    {
+        OpenSeaProxyRegistry proxyRegistry = OpenSeaProxyRegistry(
+            proxyRegistryAddress
+        );
+        if (
+            address(proxyRegistry.proxies(_owner)) == _operator ||
+            proxyToApproved[_operator]
+        ) return true;
         return super.isApprovedForAll(_owner, _operator);
     }
 
@@ -233,11 +259,9 @@ contract CryptoHunkz is
         returns (bool)
     {
         return
-            interfaceId == interfaceId ||
-            super.supportsInterface(interfaceId);
+            interfaceId == interfaceId || super.supportsInterface(interfaceId);
     }
 }
-
 
 /*
     :::::::::  :::::::::: ::::::::  :::::::::  :::::::::: :::::::: ::::::::::: 
