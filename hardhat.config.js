@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 require('@nomiclabs/hardhat-waffle');
 require('hardhat-gas-reporter');
 require('dotenv').config();
@@ -25,7 +26,7 @@ module.exports = {
 		settings: {
 			optimizer: {
 				enabled: true,
-				runs: 200,
+				runs: 1000,
 				details: {
 					deduplicate: true,
 					cse: true,

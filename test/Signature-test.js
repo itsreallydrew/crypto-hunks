@@ -1,6 +1,7 @@
 /* eslint-disable no-undef */
-const { MerkleTree } = require('merkletreejs');
-const keccak = require('keccak256');
+// eslint-disable-next-line no-undef
+const { ethers, Signer } = require('ethers');
+const keccak256 = require('keccak256');
 
 let addresses = [
 	'0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266',
@@ -25,28 +26,28 @@ let addresses = [
 	'0x8626f6940e2eb28930efb4cef49b2d1f2c9c1199',
 ];
 
-// hashes addresses and maps to new array called leafNodes
-const leafNodes = addresses.map((addr) => keccak(addr));
-// console.log('leaf nodes:', String(leafNodes));
-// creates new merkle tree from leaf nodes, hashes using keccak
-const merkleTree = new MerkleTree(leafNodes, keccak, { sortPairs: true });
-const rootHash = merkleTree.getHexRoot();
+let claimingAddress = addresses[0];
+// let hash = Buffer.from(keccak256(claimingAddress));
+let message = Buffer.from(keccak256(claimingAddress)).toString('hex');
 
-console.log('Whitelist Tree\n', String(merkleTree));
-// console.log('Whitelist Tree\n', merkleTree);
+// let message = hash.toString('hex');
 
-// console.log('Root hash:', rootHash.slice(2));
-console.log('Root hash:', rootHash);
+// const signer = new ethers.Wallet(process.env.PRIVATE_KEY);
 
-// grabs the first address from the leafNodes array
-const claimingAddress = leafNodes[1];
+// const signedMessage = signer.signMessage(message);
 
-const hexProof = merkleTree.getHexProof(claimingAddress);
+const signer = ethers.Wallet.createRandom();
+const signedMessage = signer.signMessage(message);
 
-console.log('Proof:', hexProof);
+// console.log(randWallet);
+// console.log(hash);
+// console.log(message);
+// console.log(signedMessage);
+
+// 1. Hash the address and set it to front end as message
+// 2. Sign the message with the wallet
+// 3. Send the signature to the contract to be decoded
 
 module.exports = {
-	merkleTree,
-	rootHash,
-	hexProof,
+	message,
 };

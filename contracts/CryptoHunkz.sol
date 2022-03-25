@@ -18,33 +18,8 @@ pragma solidity ^0.8.0;
 // Imports from Open Zeppelin
 /********************************************* */
 
-// import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
-// import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-// import "@openzeppelin/contracts/access/AccessControl.sol";
-// import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-// import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
-// import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol";
-// import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
-// import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
-// import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Holder.sol";
-// import "@openzeppelin/contracts/introspection/IERC165.sol";
-// import "@openzeppelin/contracts/introspection/ERC165.sol";
-// import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-// import "@openzeppelin/contracts/utils/Address.sol";
-// import "@openzeppelin/contracts/utils/Strings.sol";
-// import "@openzeppelin/contracts/security/Pausable.sol";
-
-// import "../OZ_Imports/ERC721Enumerable.sol";
-
 import "../OZ_Imports/ERC721-M.sol";
 import "../OZ_Imports/ECDSA.sol";
-
-
-// import "@openzeppelin/contracts/access/Ownable.sol";
-// import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-// import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
-// import "@openzeppelin/contracts/utils/Counters.sol";
-// import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "hardhat/console.sol";
 
 contract OwnableDelegateProxy {}
@@ -54,7 +29,6 @@ contract OpenSeaProxyRegistry {
 }
 
 contract CryptoHunkz is ERC721 {
-    // bytes32 public merkleRoot;
 
     using ECDSA for bytes32;
 
@@ -62,10 +36,10 @@ contract CryptoHunkz is ERC721 {
     string public hiddenURI;
     string public suffix = ".json";
 
-    uint256 public MAX_SUPPLY = 7779; // total supply is 7777 using 7778 for gas optimization. Because we're having total supply start at 1 we need to increase from 7777 to 7778. And because we don't want to do <= we increase by an additional 1 to get 7779
-
-    uint256 public totalSupply = 1; // look at Jeffrey Scholz - Donkeverse contract for refresher on using this. Modifying how we approach the contract.
-    uint256 public PUBLIC_SUPPLY = 7759; // total public is 7727 using 7729 to get rid of double checks and increase an additional because total Minted starting at 1.
+    uint256 public MAX_SUPPLY = 7778; // total supply is 7777 using 7778 for gas optimization. Because we're having total supply start at 1 we need to increase from 7777 to 7778.
+    uint256 private totalSupply = 1; // look at Jeffrey Scholz - Donkeverse contract for refresher on using this. Modifying how we approach the contract.
+    uint256 public PUBLIC_SUPPLY = 7758; // total public is 7758 using 7758 to get rid of double checks and increase an additional because total Minted starting at 1.
+    
     uint256 public price = .077 ether;
     uint256 public maxMintAmount = 6; // max amount is 5
     uint256 public maxWLAmount = 4; // max amount is 3
@@ -81,21 +55,22 @@ contract CryptoHunkz is ERC721 {
 
     mapping(address => bool) public whitelistClaimed;
     mapping(address => bool) public admins;
-    // mapping(address => uint) public ownerTokens;
     mapping(address => bool) proxyToApproved;
 
     bool public saleLive;
     bool public revealed;
-    bool public whiteListActive = true;
+    bool public whiteListActive;
 
     modifier onlyAdmin() {
         require(admins[msg.sender], "Only admins can call this function");
         _;
     }
 
-    constructor(string memory _initURI) ERC721("CryptoHunkz", "HUNKZ") {
+    constructor(string memory _initURI, address _signingAddress, address _proxy) ERC721("CryptoHunkz", "HUNKZ") {
         admins[msg.sender] = true;
         hiddenURI = _initURI;
+        signerAddress = _signingAddress;
+        proxyRegistryAddress = _proxy;
     }
 
     function whitelistMint(bytes calldata _signature, uint256 _quantity)
@@ -104,7 +79,6 @@ contract CryptoHunkz is ERC721 {
     {
         uint256 _totalSupply = totalSupply;
         require(tx.origin == msg.sender, "Caller must be original address");
-        require(_totalSupply < MAX_SUPPLY, "sold out");
         require(whiteListActive, "Whitelist is not active");
         require(saleLive == true, "Sale is paused");
         require(_quantity < maxWLAmount, "Max amount is 3");
@@ -118,25 +92,35 @@ contract CryptoHunkz is ERC721 {
             .recover(_signature), "Not on list");
 
         whitelistClaimed[msg.sender] = true;
-        for (uint256 i = 1; i <= _quantity; i++) {
-            _mint(msg.sender, totalSupply + i);
+        for (uint256 i = 0; i < _quantity; i++) {
+            _mint(msg.sender, _totalSupply);
+            unchecked {
+                _totalSupply++;
+            }
         }
-        unchecked {
-        _totalSupply + _quantity;
-        }
-        _totalSupply = totalSupply;
+        totalSupply = _totalSupply;
     }
 
     function publicMint(uint256 _quantity) external payable {
+        uint256 _totalSupply = totalSupply;
         require(!whiteListActive, "Whitelist is active");
-        require(tx.origin == msg.sender, "Caller must be original address");
+        require(msg.sender == tx.origin, "Caller must be original address");
         require(saleLive == true, "Sale is paused");
         require(_quantity < maxMintAmount, "Invalid amount");
         require(totalSupply < PUBLIC_SUPPLY, "Sold out");
         require(msg.value == price * _quantity, "Incorrect amount of ether");
-        for (uint256 i = 1; i <= _quantity; i++) {
-            _mint(msg.sender, totalSupply + i);
+        for (uint256 i = 0; i < _quantity; i++) {
+            _mint(msg.sender, _totalSupply);
+            console.log("NFT w/ id: %s has been minted", _totalSupply);
+            unchecked {
+                _totalSupply++;
+            }
         }
+        totalSupply = _totalSupply;
+    }
+
+    function totalSupplyMinted() external view returns(uint256) {
+        return totalSupply - 1;
     }
 
     /********************************************* */
@@ -147,13 +131,26 @@ contract CryptoHunkz is ERC721 {
         admins[_newAdmin] = true;
     }
 
-    function mintReserve(uint256 _amount) external onlyAdmin {
+    // function removeAdmin(address _oldAdmin) external onlyAdmin {
+    //     checkAdmin(_oldAdmin) ?
+    //     delete admins[_oldAdmin]: revert();
+    // }
+
+
+
+
+    function mintReserve(uint256 _amount, address _to) external onlyAdmin {
         require(_amount < RESERVED, "Amount is invalid");
         uint256 _totalSupply = totalSupply;
-        for (uint256 i = 1; i <= _amount; i++) {
-            _mint(_msgSender(), _totalSupply + i);
+        for (uint256 i = 0; i < _amount; i++) {
+            _mint(_to, _totalSupply);
+            unchecked {
+                _totalSupply++;
+            }
         }
         RESERVED = RESERVED -= _amount;
+        totalSupply = _totalSupply;
+
     }
 
     function reveal() external onlyAdmin {
@@ -188,9 +185,10 @@ contract CryptoHunkz is ERC721 {
         proxyToApproved[_proxyAddress] = !proxyToApproved[_proxyAddress];
     }
 
-    // function setRoot(bytes32 _merkleRoot) external onlyAdmin {
-    //     merkleRoot = _merkleRoot;
-    // }
+    function setSignerAddress(address _signerAddress) external onlyAdmin {
+        signerAddress = _signerAddress;
+    }
+
 
     function setProxyRegistryAddress(address _proxyRegistryAddress)
         external
@@ -202,12 +200,6 @@ contract CryptoHunkz is ERC721 {
     /********************************************* */
     // OVERRIDES
     /********************************************* */
-    function _mint(address to, uint256 tokenId) internal virtual override {
-        require(to != address(0), "ERC721: mint to the zero address");
-        require(!_exists(tokenId), "ERC721: token already minted");
-        _owners.push(to);
-        emit Transfer(address(0), to, tokenId);
-    }
 
     function tokenURI(uint256 tokenId)
         public
