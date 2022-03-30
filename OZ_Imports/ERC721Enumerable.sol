@@ -64,14 +64,13 @@ abstract contract ERC721Enumerable is ERC721, IERC721Enumerable {
             index < balanceOf(owner),
             "ERC721Enumerable: owner index out of bounds"
         );
-        uint count;
-        for(uint i; i < _owners.length; i++){
-            if(owner == _owners[i]){
-                if(count == index) return i;
+        uint256 count;
+        for (uint256 i; i < _owners.length; i++) {
+            if (owner == _owners[i]) {
+                if (count == index) return i;
                 else count++;
             }
+        }
+        revert("ERC721Enumerable: owner index out of bounds");
     }
-    revert("ERC721Enumerable: owner index out of bounds");
-    }
-
 }
